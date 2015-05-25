@@ -199,6 +199,7 @@ static void buttons_update(struct Gestures* gs,
 		earliest = -1;
 		latest = -1;
 		foreach_bit(i, ms->touch_used) {
+			xf86Msg(X_INFO, "buttons_update: button %d, set! (latest: %d)\n", i, latest);
 			if (GETBIT(ms->touch[i].state, MT_INVALID))
 				continue;
 			if (cfg->button_integrated && !GETBIT(ms->touch[i].flags, GS_BUTTON))
@@ -208,6 +209,7 @@ static void buttons_update(struct Gestures* gs,
 			if (latest == -1 || timercmp(&ms->touch[i].down, &ms->touch[latest].down, >))
 				latest = i;
 		}
+		xf86Msg(X_INFO, "buttons_update: latest: %d, earliest: %d, emulate: %d)\n", latest, earliest, emulate);
 
 		if (emulate) {
 			if (cfg->button_zones && earliest >= 0) {
@@ -257,12 +259,15 @@ static void buttons_update(struct Gestures* gs,
 				struct timeval expire;
 				foreach_bit(i, ms->touch_used) {
 					timeraddms(&ms->touch[i].down, cfg->button_expire, &expire);
+					xf86Msg(X_INFO, "buttons_update(%d): move: %d, expire: %d, timer: %d (touching: %d)\n", i, cfg->button_move, cfg->button_expire, timercmp(&ms->touch[latest].down, &expire, <), touching);
+					xf86Msg(X_INFO, "buttons_update(%d): timer: this: %d, expire: %d, latest: %d\n", i, timertoms(&ms->touch[i].down), timertoms(&expire), timertoms(&ms->touch[latest].down));
 					if (cfg->button_move || cfg->button_expire == 0 || timercmp(&ms->touch[latest].down, &expire, <))
 						touching++;
 				}
 
 				if (cfg->button_integrated)
 					touching--;
+				xf86Msg(X_INFO, "buttons_update(): integrated: %d, touching: %d\n", cfg->button_integrated, touching);
 
 				if (touching == 1 && cfg->button_1touch > 0)
 					trigger_button_emulation(gs, cfg->button_1touch - 1);
