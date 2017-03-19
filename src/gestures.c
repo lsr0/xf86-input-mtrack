@@ -34,6 +34,7 @@
 static void trigger_button_up(struct Gestures* gs, int button)
 {
 	if (IS_VALID_BUTTON(button)) {
+		xf86Msg(X_INFO, "trigger_button_up: from %d up (emulate: %d)\n", button, gs->button_emulate);
 		if (button == 0 && gs->button_emulate > 0) {
 			button = gs->button_emulate;
 			gs->button_emulate = 0;
@@ -199,7 +200,7 @@ static void buttons_update(struct Gestures* gs,
 		earliest = -1;
 		latest = -1;
 		foreach_bit(i, ms->touch_used) {
-			xf86Msg(X_INFO, "buttons_update: button %d, set! (latest: %d)\n", i, latest);
+			xf86Msg(X_INFO, "buttons_update[%d]: button %d, set! (latest/ear: %d/%d) (%u.%06u)\n", GETBIT(ms->touch[i].state, MT_INVALID), i, latest, earliest, ms->touch[i].down.tv_sec, ms->touch[i].down.tv_usec);
 			if (GETBIT(ms->touch[i].state, MT_INVALID))
 				continue;
 			if (cfg->button_integrated && !GETBIT(ms->touch[i].flags, GS_BUTTON))
@@ -258,15 +259,29 @@ static void buttons_update(struct Gestures* gs,
 				touching = 0;
 				struct timeval expire;
 				foreach_bit(i, ms->touch_used) {
+                    if (GETBIT(ms->touch[i].state, MT_INVALID))
+                        continue;
 					timeraddms(&ms->touch[i].down, cfg->button_expire, &expire);
-					xf86Msg(X_INFO, "buttons_update(%d): move: %d, expire: %d, timer: %d (touching: %d)\n", i, cfg->button_move, cfg->button_expire, timercmp(&ms->touch[latest].down, &expire, <), touching);
-					xf86Msg(X_INFO, "buttons_update(%d): timer: this: %d, expire: %d, latest: %d\n", i, timertoms(&ms->touch[i].down), timertoms(&expire), timertoms(&ms->touch[latest].down));
+					xf86Msg(X_INFO, "buttons_update(%d): move: %d, expire: %d, timer: %d (touching: %d)\n",
+                            i, cfg->button_move, cfg->button_expire, timercmp(&ms->touch[latest].down, &expire, <), touching);
+					xf86Msg(X_INFO, "buttons_update(%d): timer: this: %u.%06u, expire: %u.%06u, latest: %u.%06u\n",
+                            i, ms->touch[i].down.tv_sec, ms->touch[i].down.tv_usec,
+                            expire.tv_sec, expire.tv_usec,
+                            ms->touch[latest].down.tv_sec, ms->touch[latest].down.tv_usec);
 					if (cfg->button_move || cfg->button_expire == 0 || timercmp(&ms->touch[latest].down, &expire, <))
 						touching++;
 				}
 
-				if (cfg->button_integrated)
-					touching--;
+				//if (cfg->button_integrated)
+				//	touching--;
+				if (cfg->button_integrated && (touching > 1)) {
+                    struct timeval resting_expire;
+                    timeraddms(&ms->touch[earliest].down, 250, &resting_expire);
+                    if (timercmp(&ms->touch[latest].down, &resting_expire, >)) {
+                        xf86Msg(X_INFO, "buttons_update(): resting expire, killin' it.\n");
+                        touching--;
+                    }
+                }
 				xf86Msg(X_INFO, "buttons_update(): integrated: %d, touching: %d\n", cfg->button_integrated, touching);
 
 				if (touching == 1 && cfg->button_1touch > 0)
@@ -304,7 +319,21 @@ static void tapping_update(struct Gestures* gs,
 
 	timerclear(&epoch);
 	timeraddms(&gs->tap_time_down, cfg->tap_timeout, &tv_tmp);
+    //int a = !timercmp(&gs->tap_time_down, &epoch, ==);
+    //int b = !timercmp(&gs->time, &tv_tmp, <);
+    //xf86Msg(X_INFO, "tapping_update: timers [%d/%d], ttd %u.%06u, epoch %u.%06u, tmp %u.%06u\n",
+    //        a, b,
+    //        gs->tap_time_down.tv_sec, gs->tap_time_down.tv_usec,
+    //        epoch.tv_sec, epoch.tv_usec,
+    //        tv_tmp.tv_sec, tv_tmp.tv_usec);
 	if (!timercmp(&gs->tap_time_down, &epoch, ==) && !timercmp(&gs->time, &tv_tmp, <)) {
+        int a = !timercmp(&gs->tap_time_down, &epoch, ==);
+        int b = !timercmp(&gs->time, &tv_tmp, <);
+        xf86Msg(X_INFO, "tapping_update: time expired [%d/%d], ttd %u.%06u, epoch %u.%06u, tmp %u.%06u\n",
+                a, b,
+                gs->tap_time_down.tv_sec, gs->tap_time_down.tv_usec,
+                epoch.tv_sec, epoch.tv_usec,
+                tv_tmp.tv_sec, tv_tmp.tv_usec);
 		gs->tap_touching = 0;
 		gs->tap_released = 0;
 		timerclear(&gs->tap_time_down);
@@ -316,22 +345,18 @@ static void tapping_update(struct Gestures* gs,
 	}
 	else {
 		foreach_bit(i, ms->touch_used) {
-			if (GETBIT(ms->touch[i].state, MT_INVALID) || GETBIT(ms->touch[i].flags, GS_BUTTON)) {
+			if (GETBIT(ms->touch[i].state, MT_INVALID) /*|| GETBIT(ms->touch[i].flags, GS_BUTTON)*/) {
 				if (GETBIT(ms->touch[i].flags, GS_TAP)) {
 					CLEARBIT(ms->touch[i].flags, GS_TAP);
 					gs->tap_touching--;
-#ifdef DEBUG_GESTURES
-					xf86Msg(X_INFO, "tapping_update: tap_touching-- (%d): invalid or button\n", gs->tap_touching);
-#endif
+					xf86Msg(X_INFO, "tapping_update[%d]: tap_touching-- (%d): invalid or button\n", i, gs->tap_touching);
 				}
 			}
 			else {
 				if (GETBIT(ms->touch[i].state, MT_NEW)) {
 					SETBIT(ms->touch[i].flags, GS_TAP);
 					gs->tap_touching++;
-#ifdef DEBUG_GESTURES
-					xf86Msg(X_INFO, "tapping_update: tap_touching++ (%d): new touch\n", gs->tap_touching);
-#endif
+					xf86Msg(X_INFO, "tapping_update[%d]: tap_touching++ (%d): new touch\n", i, gs->tap_touching);
 					timerclear(&tv_tmp);
 					if (timercmp(&gs->tap_time_down, &epoch, ==))
 						timercp(&gs->tap_time_down, &gs->time);
@@ -342,17 +367,13 @@ static void tapping_update(struct Gestures* gs,
 					if (dist >= SQRVAL(cfg->tap_dist)) {
 						CLEARBIT(ms->touch[i].flags, GS_TAP);
 						gs->tap_touching--;
-#ifdef DEBUG_GESTURES
-					xf86Msg(X_INFO, "tapping_update: tap_touching-- (%d): moved too far\n", gs->tap_touching);
-#endif
+					  xf86Msg(X_INFO, "tapping_update[%d]: tap_touching-- (%d): moved too far\n", i, gs->tap_touching);
 					}
 					else if (GETBIT(ms->touch[i].state, MT_RELEASED)) {
 						gs->tap_touching--;
 						gs->tap_released++;
-#ifdef DEBUG_GESTURES
-					xf86Msg(X_INFO, "tapping_update: tap_touching-- (%d): released\n", gs->tap_touching);
-					xf86Msg(X_INFO, "tapping_update: tap_released++ (%d) (max %d): released\n", gs->tap_released, released_max);
-#endif
+					  xf86Msg(X_INFO, "tapping_update[%d]: tap_touching-- (%d): released\n", i, gs->tap_touching);
+					  xf86Msg(X_INFO, "tapping_update[%d]: tap_released++ (%d) (max %d): released\n", i, gs->tap_released, released_max);
 					}
 				}
 			}
@@ -374,6 +395,7 @@ static void tapping_update(struct Gestures* gs,
 		else
 			n = cfg->tap_4touch - 1;
 
+    xf86Msg(X_INFO, "tapping_update: register click (%d) [tr: %d]\n", n, gs->tap_released);
 		trigger_button_click(gs, n, &tv_tmp);
 		if (cfg->drag_enable && n == 0)
 			trigger_drag_ready(gs, cfg);
@@ -446,6 +468,11 @@ static void trigger_scroll(struct Gestures* gs,
 			gs->move_axes[GS_AXIS_SCROLL_HORIZONTAL] = distx;
 			gs->move_axes[GS_AXIS_SCROLL_VERTICAL] = disty;
 			gs->move_dist = 0;
+
+      struct timeval epoch;
+      timerclear(&epoch);
+      if (!timercmp(&gs->button_delayed_time, &epoch, ==))
+          xf86Msg(X_INFO, "trigger_scroll: We were in button timeout\n");
 		} else {
 			if (gs->move_dist >= cfg->scroll_dist) {
 				gs->move_dist = MODVAL(gs->move_dist, cfg->scroll_dist);
