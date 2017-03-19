@@ -57,7 +57,7 @@ struct Gestures {
 
 	/* Pointer movement is tracked here.
 	 */
-	int move_dx, move_dy;
+	double move_dx, move_dy;
 
 	/* Scroll vertical, horizontal.
 	 */

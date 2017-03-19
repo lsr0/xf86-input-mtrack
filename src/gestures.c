@@ -403,16 +403,17 @@ static void trigger_move(struct Gestures* gs,
 	if ((gs->move_type == GS_MOVE || !timercmp(&gs->time, &gs->move_wait, <)) && (dx != 0 || dy != 0)) {
 		if (trigger_drag_start(gs, cfg, dx, dy)) {
 			clear_move(gs);
-			gs->move_dx = (int)(dx*cfg->sensitivity);
-			gs->move_dy = (int)(dy*cfg->sensitivity);
+			gs->move_dx = dx*cfg->sensitivity;
+			gs->move_dy = dy*cfg->sensitivity;
 			gs->move_type = GS_MOVE;
 			gs->move_dist = 0;
 			gs->move_dir = TR_NONE;
 			gs->move_speed = hypot(gs->move_dx, gs->move_dy)/timertomicro(&gs->dt);
 			timerclear(&gs->move_wait);
 #ifdef DEBUG_GESTURES
-			xf86Msg(X_INFO, "trigger_move: %d, %d (speed %f)\n",
-				gs->move_dx, gs->move_dy, gs->move_speed);
+			xf86Msg(X_INFO, "trigger_move[%d|%x|%d|%d]: %f, %f (speed %f)\n",
+				gs->move_drag, gs->tap_touching, gs->tap_released,
+                gs->buttons, gs->move_dx, gs->move_dy, gs->move_speed);
 #endif
 		}
 	}
