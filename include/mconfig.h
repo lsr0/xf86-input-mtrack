@@ -53,6 +53,7 @@
 #define DEFAULT_GESTURE_HOLD 10
 #define DEFAULT_GESTURE_WAIT 100
 #define DEFAULT_SCROLL_HIGH_PREC 1
+#define DEFAULT_SCROLL_SENS 1.0
 #define DEFAULT_SCROLL_DIST 150
 #define DEFAULT_SCROLL_UP_BTN 4
 #define DEFAULT_SCROLL_DN_BTN 5
@@ -138,6 +139,7 @@ struct MConfig {
 	int gesture_hold;		// How long to "hold down" the emulated button for gestures. > 0
 	int gesture_wait;		// How long after a gesture to wait before movement is allowed. >= 0
 	int scroll_high_prec;		// Enable high precision scrolling. 0 or 1.
+	double scroll_sens;		// Scroll movement multiplier
 	int scroll_dist;		// Distance needed to trigger a button. >= 0, 0 disables
 	int scroll_up_btn;		// Button to use for scroll up. >= 0, 0 is none
 	int scroll_dn_btn;		// Button to use for scroll down. >= 0, 0 is none

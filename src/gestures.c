@@ -465,14 +465,18 @@ static void trigger_scroll(struct Gestures* gs,
 			if ((distx == 0.0) && (disty == 0.0))
 				return;
 
-			gs->move_axes[GS_AXIS_SCROLL_HORIZONTAL] = distx;
-			gs->move_axes[GS_AXIS_SCROLL_VERTICAL] = disty;
+			gs->move_axes[GS_AXIS_SCROLL_HORIZONTAL] = distx * cfg->scroll_sens;
+			gs->move_axes[GS_AXIS_SCROLL_VERTICAL] = disty * cfg->scroll_sens;
 			gs->move_dist = 0;
 
       struct timeval epoch;
       timerclear(&epoch);
       if (!timercmp(&gs->button_delayed_time, &epoch, ==))
           xf86Msg(X_INFO, "trigger_scroll: We were in button timeout\n");
+#ifdef DEBUG_GESTURES
+      xf86Msg(X_INFO, "trigger_scroll: scrolling (%f, %f)[*%.2f] (speed %f)\n",
+         gs->move_axes[GS_AXIS_SCROLL_HORIZONTAL], gs->move_axes[GS_AXIS_SCROLL_VERTICAL], cfg->scroll_sens, gs->move_speed);
+#endif
 		} else {
 			if (gs->move_dist >= cfg->scroll_dist) {
 				gs->move_dist = MODVAL(gs->move_dist, cfg->scroll_dist);
@@ -486,11 +490,11 @@ static void trigger_scroll(struct Gestures* gs,
 				else if (dir == TR_DIR_RT)
 					trigger_button_click(gs, cfg->scroll_rt_btn - 1, &tv_tmp);
 			}
-		}
 #ifdef DEBUG_GESTURES
-		xf86Msg(X_INFO, "trigger_scroll: scrolling %f (%f, %f) in direction %d (at %d of %d) (speed %f)\n",
-			dist, distx, disty, dir, gs->move_dist, cfg->scroll_dist, gs->move_speed);
+            xf86Msg(X_INFO, "trigger_scroll: scrolling %f (%f, %f) in direction %d (at %d of %d) (speed %f)\n",
+                dist, distx, disty, dir, gs->move_dist, cfg->scroll_dist, gs->move_speed);
 #endif
+		}
 	}
 }
 
