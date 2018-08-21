@@ -79,6 +79,7 @@ void mconfig_defaults(struct MConfig* cfg)
 	cfg->drag_enable = DEFAULT_DRAG_ENABLE;
 	cfg->drag_timeout = DEFAULT_DRAG_TIMEOUT;
 	cfg->sensitivity = DEFAULT_SENSITIVITY;
+	cfg->tap_ignore_top_mm = DEFAULT_TAP_IGNORE_TOP_MM;
 }
 
 void mconfig_init(struct MConfig* cfg,
@@ -87,6 +88,8 @@ void mconfig_init(struct MConfig* cfg,
 	cfg->touch_minor = caps->has_abs[MTDEV_TOUCH_MINOR];
 	cfg->pad_width = get_cap_xsize(caps);
 	cfg->pad_height = get_cap_ysize(caps);
+	cfg->resolution_x = MAXVAL(get_cap_xres(caps), 1);
+	cfg->resolution_y = MAXVAL(get_cap_yres(caps), 1);
 	
 	if (caps->has_abs[MTDEV_TOUCH_MAJOR] && caps->has_abs[MTDEV_WIDTH_MAJOR]) {
 		cfg->touch_type = MCFG_SCALE;
@@ -182,5 +185,6 @@ void mconfig_configure(struct MConfig* cfg,
 	cfg->axis_x_invert = xf86SetBoolOption(opts, "AxisXInvert", DEFAULT_AXIS_X_INVERT);
 	cfg->axis_y_invert = xf86SetBoolOption(opts, "AxisYInvert", DEFAULT_AXIS_Y_INVERT);
 	cfg->sensitivity = MAXVAL(xf86SetRealOption(opts, "Sensitivity", DEFAULT_SENSITIVITY), 0);
+	cfg->tap_ignore_top_mm = MAXVAL(xf86SetIntOption(opts, "TapIgnoreTopMm", DEFAULT_TAP_IGNORE_TOP_MM), 0);
 }
 

@@ -299,7 +299,7 @@ static void tapping_update(struct Gestures* gs,
 			const struct MConfig* cfg,
 			struct MTState* ms)
 {
-	int i, n, dist, released_max;
+	int i, n, dist, released_max, ignored;
 	struct timeval tv_tmp;
 	struct timeval epoch;
 
@@ -336,6 +336,7 @@ static void tapping_update(struct Gestures* gs,
                 tv_tmp.tv_sec, tv_tmp.tv_usec);
 		gs->tap_touching = 0;
 		gs->tap_released = 0;
+		gs->tap_ignored = 0;
 		timerclear(&gs->tap_time_down);
 
 		foreach_bit(i, ms->touch_used) {
@@ -374,6 +375,17 @@ static void tapping_update(struct Gestures* gs,
 						gs->tap_released++;
 					  xf86Msg(X_INFO, "tapping_update[%d]: tap_touching-- (%d): released\n", i, gs->tap_touching);
 					  xf86Msg(X_INFO, "tapping_update[%d]: tap_released++ (%d) (max %d): released\n", i, gs->tap_released, released_max);
+						xf86Msg(X_INFO, "tapping_update[%d]: tap started at %d mm, ended at %d mm from top\n", i,
+										(ms->touch[i].start_y / cfg->resolution_y),
+										(ms->touch[i].y / cfg->resolution_y));
+						if ((ms->touch[i].start_y / cfg->resolution_y) < cfg->tap_ignore_top_mm 
+						&& (ms->touch[i].y / cfg->resolution_y) < cfg->tap_ignore_top_mm) {
+								xf86Msg(X_INFO, "tapping_update[%d]: ignoring tap that started at %d mm, ended at %d mm from top\n", i,
+												(ms->touch[i].start_y / cfg->resolution_y),
+												(ms->touch[i].y / cfg->resolution_y));
+								gs->tap_ignored += 1;
+
+						}
 					}
 				}
 			}
@@ -381,10 +393,15 @@ static void tapping_update(struct Gestures* gs,
 	}
 
 	if ((gs->tap_touching == 0 && gs->tap_released > 0) || gs->tap_released >= released_max) {
+	  xf86Msg(X_INFO, "(gs->tap_released - ignored) > 0): %d, gs->tap_released >= released_max: %d\n",
+						(gs->tap_released - gs->tap_ignored) > 0,
+            gs->tap_released >= released_max);
 		foreach_bit(i, ms->touch_used) {
 			if (GETBIT(ms->touch[i].flags, GS_TAP))
 				CLEARBIT(ms->touch[i].flags, GS_TAP);
 		}
+
+		gs->tap_released -= gs->tap_ignored;
 
 		if (gs->tap_released == 1)
 			n = cfg->tap_1touch - 1;
@@ -392,11 +409,15 @@ static void tapping_update(struct Gestures* gs,
 			n = cfg->tap_2touch - 1;
 		else if (gs->tap_released == 3)
 			n = cfg->tap_3touch - 1;
-		else
+		else if (gs->tap_released == 4)
 			n = cfg->tap_4touch - 1;
+		else
+			n = -1;
 
-    xf86Msg(X_INFO, "tapping_update: register click (%d) [tr: %d]\n", n, gs->tap_released);
-		trigger_button_click(gs, n, &tv_tmp);
+		if (n >= 0) {
+		    xf86Msg(X_INFO, "tapping_update: register click (%d) [tr: %d]\n", n, gs->tap_released);
+		    trigger_button_click(gs, n, &tv_tmp);
+		}
 		if (cfg->drag_enable && n == 0)
 			trigger_drag_ready(gs, cfg);
 
@@ -405,6 +426,7 @@ static void tapping_update(struct Gestures* gs,
 
 		gs->tap_touching = 0;
 		gs->tap_released = 0;
+		gs->tap_ignored = 0;
 		timerclear(&gs->tap_time_down);
 	}
 }

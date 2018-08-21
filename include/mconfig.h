@@ -82,6 +82,7 @@
 #define DEFAULT_AXIS_X_INVERT 0
 #define DEFAULT_AXIS_Y_INVERT 0
 #define DEFAULT_SENSITIVITY 1.0
+#define DEFAULT_TAP_IGNORE_TOP_MM 0
 
 #define MCFG_NONE 0
 #define MCFG_SCALE 1
@@ -98,6 +99,8 @@ struct MConfig {
 	int touch_max;		// Maximum touch value.
 	int pad_width;		// Width of the touchpad.
 	int pad_height;		// Height of the touchpad.
+	int resolution_x;	// Touchpad units per mm
+	int resolution_y;	// Touchpad units per mm
 
 	// Set by config.
 	int touch_down;		// When is a finger touching? 0 - 100 (percentage)
@@ -166,6 +169,7 @@ struct MConfig {
 	int drag_wait;			// How long to wait before triggering button down? >= 0
 	int drag_dist;			// How far is the finger allowed to move during wait time? >= 0
 	double sensitivity;		// Mouse movement multiplier. >= 0
+	int tap_ignore_top_mm;	// Ignore taps in the top mm of the touchpad. >0
 };
 
 /* Load the MConfig struct with its defaults.

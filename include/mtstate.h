@@ -42,6 +42,7 @@ struct Touch {
 	int tracking_id;
 	int x, y, dx, dy;
 	int total_dx, total_dy;
+	int start_x, start_y;
 	struct timeval down;
 };
 

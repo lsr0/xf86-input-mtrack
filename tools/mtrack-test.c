@@ -66,7 +66,7 @@ static void print_gestures(const struct Gestures* gs)
 	}
 
 	if (gs->move_dx != 0 || gs->move_dy != 0)
-		printf("moving (%+4d, %+4d)\n", gs->move_dx, gs->move_dy);
+		printf("moving (%+4.2f, %+4.2f)\n", gs->move_dx, gs->move_dy);
 
 	buttons_prev = gs->buttons;
 }

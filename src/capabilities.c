@@ -163,6 +163,16 @@ int get_cap_yflip(const struct Capabilities *cap, int y)
 	return i->maximum - (y - i->minimum);
 }
 
+int get_cap_xres(const struct Capabilities *cap)
+{
+	return cap->abs[MTDEV_POSITION_X].resolution;
+}
+
+int get_cap_yres(const struct Capabilities *cap)
+{
+	return cap->abs[MTDEV_POSITION_Y].resolution;
+}
+
 void output_capabilities(const struct Capabilities *cap)
 {
 	char line[1024];
@@ -179,9 +189,10 @@ void output_capabilities(const struct Capabilities *cap)
 	xf86Msg(X_INFO, "mtrack: caps:%s\n", line);
 	for (i = 0; i < MT_ABS_SIZE; i++) {
 		if (cap->has_abs[i])
-			xf86Msg(X_INFO, "mtrack: %d: min: %d max: %d\n",
+			xf86Msg(X_INFO, "mtrack: %d: min: %d max: %d units/mm: %d\n",
 				i,
 				cap->abs[i].minimum,
-				cap->abs[i].maximum);
+				cap->abs[i].maximum,
+				cap->abs[i].resolution);
 	}
 }

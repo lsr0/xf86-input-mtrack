@@ -151,6 +151,8 @@ static int touch_append(struct MTState* ms,
 		ms->touch[n].dy = 0;
 		ms->touch[n].total_dx = 0;
 		ms->touch[n].total_dy = 0;
+		ms->touch[n].start_x = x;
+		ms->touch[n].start_y = y;
 		SETBIT(ms->touch[n].state, MT_NEW);
 		SETBIT(ms->touch_used, n);
 	}
