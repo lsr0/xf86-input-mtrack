@@ -96,6 +96,7 @@ struct Gestures {
 void gestures_init(struct MTouch* mt);
 void gestures_extract(struct MTouch* mt);
 int gestures_delayed(struct MTouch* mt);
+int gestures_delayed_time(struct MTouch* mt);
 
 #endif
 

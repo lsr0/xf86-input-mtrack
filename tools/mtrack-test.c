@@ -74,6 +74,7 @@ static void print_gestures(const struct Gestures* gs)
 static void loop_device(int fd)
 {
 	struct MTouch mt;
+	int delayed_wait_ms;
 	if (mtouch_configure(&mt, fd)) {
 		fprintf(stderr, "error: could not configure device\n");
 		return;
@@ -89,8 +90,11 @@ static void loop_device(int fd)
 
 	//while (!mtdev_idle(&mt.dev, fd, 5000)) {
 	while (1) {
-		while (mtouch_read(&mt) > 0)
-			print_gestures(&mt.gs);
+		delayed_wait_ms = gestures_delayed_time(&mt);
+		delayed_wait_ms = delayed_wait_ms < 0 ? 10000 : delayed_wait_ms;
+		if (!mtdev_idle(&mt.dev, fd, delayed_wait_ms))
+			while (mtouch_read(&mt) > 0)
+				print_gestures(&mt.gs);
 		if (mtouch_delayed(&mt))
 			print_gestures(&mt.gs);
 	}

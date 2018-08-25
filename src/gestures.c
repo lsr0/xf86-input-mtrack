@@ -873,3 +873,20 @@ int gestures_delayed(struct MTouch* mt)
 	return 0;
 }
 
+int gestures_delayed_time(struct MTouch* mt)
+{
+	struct Gestures* gs = &mt->gs;
+	struct timeval now;
+	struct timeval delta;
+	struct timeval epoch;
+
+	timerclear(&epoch);
+	if (timercmp(&gs->button_delayed_time, &epoch, <=))
+		return -1;
+	if (timercmp(&gs->button_delayed_time, &now, <))
+		return 0;
+	microtime(&now);
+	timersub(&gs->button_delayed_time, &now, &delta);
+	return timertoms(&delta);
+}
+
