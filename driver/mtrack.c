@@ -93,6 +93,7 @@ static int device_init(DeviceIntPtr dev, LocalDevicePtr local)
 	unsigned char btmap[DIM_BUTTON + 1] = {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
 	};
+	int resolution_x, resolution_y;
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
 	Atom axes_labels[NUM_AXES], btn_labels[DIM_BUTTON];
 	initAxesLabels(axes_labels);
@@ -133,32 +134,44 @@ static int device_init(DeviceIntPtr dev, LocalDevicePtr local)
 #error "Unsupported ABI_XINPUT_VERSION"
 #endif
 
+	resolution_x = mt->caps.abs[MTDEV_POSITION_X].resolution ?: 1;
+	resolution_y = mt->caps.abs[MTDEV_POSITION_Y].resolution ?: 1;
 	xf86InitValuatorAxisStruct(dev, 0,
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
 				   axes_labels[0],
-#endif
 				   mt->caps.abs[MTDEV_POSITION_X].minimum,
 				   mt->caps.abs[MTDEV_POSITION_X].maximum,
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 12
-				   1, 0, 1, Absolute);
-#else
-				   1, 0, 1);
-#endif
+				   resolution_x * 1000,
+				   0,
+				   resolution_x * 1000,
+				   Absolute);
 	xf86InitValuatorDefaults(dev, 0);
 	xf86InitValuatorAxisStruct(dev, 1,
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
 				   axes_labels[1],
-#endif
 				   mt->caps.abs[MTDEV_POSITION_Y].minimum,
 				   mt->caps.abs[MTDEV_POSITION_Y].maximum,
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 12
-				   1, 0, 1, Absolute);
-#else
-				   1, 0, 1);
-#endif
-	SetScrollValuator(dev, 2, SCROLL_TYPE_HORIZONTAL, mt->cfg.scroll_dist, 0);
-	SetScrollValuator(dev, 3, SCROLL_TYPE_VERTICAL, mt->cfg.scroll_dist, 0);
+				   resolution_y * 1000,
+				   0,
+				   resolution_y * 1000,
+				   Absolute);
 	xf86InitValuatorDefaults(dev, 1);
+	xf86InitValuatorAxisStruct(dev, 2,
+				   axes_labels[2],
+				   NO_AXIS_LIMITS,
+				   NO_AXIS_LIMITS,
+				   resolution_x * 1000,
+				   0,
+				   resolution_x * 1000,
+				   Relative);
+	SetScrollValuator(dev, 2, SCROLL_TYPE_HORIZONTAL, mt->cfg.scroll_dist, 0);
+	xf86InitValuatorAxisStruct(dev, 3,
+				   axes_labels[3],
+				   NO_AXIS_LIMITS,
+				   NO_AXIS_LIMITS,
+				   resolution_y * 1000,
+				   0,
+				   resolution_y * 1000,
+				   Relative);
+	SetScrollValuator(dev, 3, SCROLL_TYPE_VERTICAL, mt->cfg.scroll_dist, SCROLL_FLAG_PREFERRED);
 	mprops_init(&mt->cfg, local);
 	XIRegisterPropertyHandler(dev, mprops_set_property, NULL, NULL);
 
