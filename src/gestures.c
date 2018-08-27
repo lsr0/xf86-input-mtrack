@@ -726,6 +726,8 @@ static void moving_update(struct Gestures* gs,
 	foreach_bit(i, ms->touch_used) {
 		if (GETBIT(ms->touch[i].state, MT_INVALID))
 			continue;
+		if (GETBIT(ms->touch[i].state, MT_RELEASED))
+			continue;
 		else if (GETBIT(ms->touch[i].flags, GS_BUTTON)) {
 			btn_count++;
 			dx += ms->touch[i].dx;
