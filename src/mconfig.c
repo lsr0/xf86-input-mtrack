@@ -80,6 +80,8 @@ void mconfig_defaults(struct MConfig* cfg)
 	cfg->drag_timeout = DEFAULT_DRAG_TIMEOUT;
 	cfg->sensitivity = DEFAULT_SENSITIVITY;
 	cfg->tap_ignore_top_mm = DEFAULT_TAP_IGNORE_TOP_MM;
+	cfg->tap_ignore_side_mm = DEFAULT_TAP_IGNORE_SIDE_MM;
+	cfg->tap_ignore_side_within_top_mm = DEFAULT_TAP_IGNORE_SIDE_WITHIN_TOP_MM;
 }
 
 void mconfig_init(struct MConfig* cfg,
@@ -186,5 +188,7 @@ void mconfig_configure(struct MConfig* cfg,
 	cfg->axis_y_invert = xf86SetBoolOption(opts, "AxisYInvert", DEFAULT_AXIS_Y_INVERT);
 	cfg->sensitivity = MAXVAL(xf86SetRealOption(opts, "Sensitivity", DEFAULT_SENSITIVITY), 0);
 	cfg->tap_ignore_top_mm = MAXVAL(xf86SetIntOption(opts, "TapIgnoreTopMm", DEFAULT_TAP_IGNORE_TOP_MM), 0);
+	cfg->tap_ignore_side_mm = MAXVAL(xf86SetIntOption(opts, "TapIgnoreSideMm", DEFAULT_TAP_IGNORE_SIDE_MM), 0);
+	cfg->tap_ignore_side_within_top_mm = MAXVAL(xf86SetIntOption(opts, "TapIgnoreSideWithinTopMm", DEFAULT_TAP_IGNORE_SIDE_WITHIN_TOP_MM), 0);
 }
 

@@ -295,6 +295,24 @@ static void buttons_update(struct Gestures* gs,
 	}
 }
 
+static int tapping_in_dead_zone(const int x, const int y, const struct MConfig* cfg)
+{
+	const int ignore_top = cfg->tap_ignore_top_mm * cfg->resolution_y;
+	const int ignore_side = cfg->tap_ignore_side_mm * cfg->resolution_x;
+	if (y < ignore_top)
+		printf("ignore top (%d < %d)\n", y, ignore_top);
+	if (y < ignore_top)
+		return 1;
+	if (!ignore_side)
+		return 0;
+	if (x < ignore_side || cfg->pad_width - x < ignore_side) {
+		printf("ignore side? (%d < %d) || (%d < %d)\n", x, ignore_side, cfg->pad_width - x, ignore_side);
+		const int ignore_side_within_y = cfg->tap_ignore_side_within_top_mm * cfg->resolution_y;
+		return !ignore_side_within_y || y < ignore_side_within_y;
+	}
+	return 0;
+}
+
 static void tapping_update(struct Gestures* gs,
 			const struct MConfig* cfg,
 			struct MTState* ms)
@@ -375,15 +393,27 @@ static void tapping_update(struct Gestures* gs,
 						gs->tap_released++;
 					  xf86Msg(X_INFO, "tapping_update[%d]: tap_touching-- (%d): released\n", i, gs->tap_touching);
 					  xf86Msg(X_INFO, "tapping_update[%d]: tap_released++ (%d) (max %d): released\n", i, gs->tap_released, released_max);
-						xf86Msg(X_INFO, "tapping_update[%d]: tap started at %d mm, ended at %d mm from top\n", i,
+						int x_start_mm = ms->touch[i].start_x / cfg->resolution_x;
+						int x_end_mm = ms->touch[i].x / cfg->resolution_x;
+						int width_mm = cfg->pad_width / cfg->resolution_x;
+						int x_from_edge = (ms->touch[i].start_x < (cfg->pad_width / 2)) ? ms->touch[i].start_x : ms->touch[i].start_x - cfg->pad_width;
+						int x_from_edge_mm = x_from_edge / cfg->resolution_x;
+						xf86Msg(X_INFO, "tapping_update[%d]: tap started at [%d,%d] mm, ended at [%d,%d] mm (width: %d, from_edge: %d)\n", i,
+										x_start_mm,
 										(ms->touch[i].start_y / cfg->resolution_y),
-										(ms->touch[i].y / cfg->resolution_y));
-						if ((ms->touch[i].start_y / cfg->resolution_y) < cfg->tap_ignore_top_mm 
-						&& (ms->touch[i].y / cfg->resolution_y) < cfg->tap_ignore_top_mm) {
-								xf86Msg(X_INFO, "tapping_update[%d]: ignoring tap that started at %d mm, ended at %d mm from top\n", i,
-												(ms->touch[i].start_y / cfg->resolution_y),
-												(ms->touch[i].y / cfg->resolution_y));
-								gs->tap_ignored += 1;
+										x_end_mm,
+										(ms->touch[i].y / cfg->resolution_y),
+										width_mm,
+										x_from_edge_mm);
+						if (tapping_in_dead_zone(ms->touch[i].start_x, ms->touch[i].start_y, cfg) || tapping_in_dead_zone(ms->touch[i].x, ms->touch[i].y, cfg)) {
+							xf86Msg(X_INFO, "tapping_update[%d]: ignoring tap started at [%d,%d] mm, ended at [%d,%d] mm (width: %d, from_edge: %d)\n", i,
+											x_start_mm,
+											(ms->touch[i].start_y / cfg->resolution_y),
+											x_end_mm,
+											(ms->touch[i].y / cfg->resolution_y),
+											width_mm,
+											x_from_edge_mm);
+							gs->tap_ignored += 1;
 
 						}
 					}

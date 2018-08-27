@@ -83,6 +83,8 @@
 #define DEFAULT_AXIS_Y_INVERT 0
 #define DEFAULT_SENSITIVITY 1.0
 #define DEFAULT_TAP_IGNORE_TOP_MM 0
+#define DEFAULT_TAP_IGNORE_SIDE_MM 0
+#define DEFAULT_TAP_IGNORE_SIDE_WITHIN_TOP_MM 0
 
 #define MCFG_NONE 0
 #define MCFG_SCALE 1
@@ -170,6 +172,8 @@ struct MConfig {
 	int drag_dist;			// How far is the finger allowed to move during wait time? >= 0
 	double sensitivity;		// Mouse movement multiplier. >= 0
 	int tap_ignore_top_mm;	// Ignore taps in the top mm of the touchpad. >0
+	int tap_ignore_side_mm;	// Ignore taps in the side mm of the touchpad. >0
+	int tap_ignore_side_within_top_mm;	// Only ignore side taps in these top mm. >0
 };
 
 /* Load the MConfig struct with its defaults.
